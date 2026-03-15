@@ -1,0 +1,30 @@
+# ROOT Data Files
+*.root
+
+# Compiled C++ and ROOT files
+*.o
+*.so
+*.d
+*.pcm
+
+# Python and Jupyter Notebooks
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Output plots, documents, and text files
+*.pdf
+*.png
+*.pptx
+*.txt
+*.tex
+
+# Ignored Folders
+OLD/
+Joan's code/
+.vscode/
