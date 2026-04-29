@@ -1,4 +1,4 @@
-# $B^0 \to D^+ \mu^- \bar{\nu}_\mu$ Exclusive Semileptonic Analysis 
+# $B^0 \to D^- \mu^+ \nu_\mu$ Exclusive Semileptonic Analysis 
 
 This repository contains the analysis scripts for the exclusive semileptonic decay $B^0 \to D^+ \mu^- \bar{\nu}_\mu$. The analysis explicitly accounts for feed-down contributions from excited charm resonances, such as D* and D** states, that decay into the reconstructed D+ final state.
 
