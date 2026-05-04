@@ -24,6 +24,8 @@
 #include "TCanvas.h"
 #include "TPaveText.h"
 #include <memory>
+#include <map>
+#include <algorithm>
 #include <RooHistPdf.h>
 #include <RooAddPdf.h>
 #include <TGaxis.h>
@@ -299,13 +301,13 @@ int mDp_max = 1915;
 --------------------------------------------
 */
 
-std::string data_1 = "~/INFN/root_files/data/Data_ALL_sw.root";
-std::string data_folder = "~/INFN/root_files/data/";
-std::string plots = "~/INFN/plots/";
-std::string WS = "~/INFN/root_files/data/Data_ALL_WS_sw.root";
-std::string MC = "~/INFN/root_files/MC/MC_2_eff_with_mCorr.root";
-std::string MC_templates_50 = "~/INFN/root_files/MC/templates_MC/templates_mcorr_50.root";
-std::string MC_templates_100 = "~/INFN/root_files/MC/templates_MC/templates_mcorr_100.root";
+std::string data_1 = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/data/Data_ALL_sw.root";
+std::string data_folder = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/data/";
+std::string plots = "/Volumes/Rome Drive/Latest_INFN/INFN/plots/";
+std::string WS = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/data/Data_ALL_WS_sw.root";
+std::string MC = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/MC_2_eff_with_mCorr.root";
+std::string MC_templates_50 = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/templates_MC/templates_mcorr_50.root";
+std::string MC_templates_100 = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/templates_MC/templates_mcorr_100.root";
 
 /*
 --------------------------------------------
@@ -542,7 +544,7 @@ void RS_WS_SB_comparison(){
 
 void correlation_check() {
     
-    TFile f(WS.c_str(),"READ");
+    TFile f(data_1.c_str(),"READ");
     TTree* t = (TTree*)f.Get("DecayTree");
 
     TCanvas *c1 = new TCanvas("c1","Correlation",800,600);
@@ -562,7 +564,7 @@ void correlation_check() {
     std::cout << "Correlation factor: "
               << h2->GetCorrelationFactor() << std::endl;
 
-    c1->SaveAs("Correlation_WS.png");
+    c1->SaveAs("Correlation_RS.png");
 }
 
 void plot_logIP() {
@@ -624,7 +626,7 @@ void fit_SB_Binned()
     const double mDp_ws_sb_lo = 1840;
     const double mDp_ws_sb_hi = 1900;
 
-    TFile fmc(MC_templates_100.c_str(),"READ"); // File acquired from main_MC.cpp. It contains the histograms of the signal components.
+    TFile fmc(MC_templates_50.c_str(),"READ"); // File acquired from main_MC.cpp. It contains the histograms of the signal components.
 
     TH1D* h_Dp = (TH1D*)fmc.Get("h_Dp_w")->Clone("h_Dp");
     TH1D* h_Dst = (TH1D*)fmc.Get("h_Dst_w")->Clone("h_Dst");
@@ -663,14 +665,14 @@ void fit_SB_Binned()
     ROOT::RDF::TH1DModel modelWS("hWS_SB_raw","",nBins,mCorr_min,mCorr_max);
     TH1D* hWS_SB = (TH1D*)dfWS
         .Filter(Form("cand_Bz_Dp_M > %f && cand_Bz_Dp_M < %f", mDp_ws_sb_lo, mDp_ws_sb_hi))
-        .Histo1D(modelWS,"cand_Bz_OWNPV_CORRM", "N_sig_sw")
+        .Histo1D(modelWS,"cand_Bz_OWNPV_CORRM")
         .GetPtr()->Clone("hWS_SB");
 
     hWS_SB->SetDirectory(nullptr);
 
     hWS_SB->Scale(1.0 / hWS_SB->Integral());
 
-    RooRealVar x("x","B_{0} CORRM [MeV]",mCorr_min,mCorr_max);
+    RooRealVar x("x","cand_Bz_OWNPV_CORRM [MeV]",mCorr_min,mCorr_max);
     x.setBins(nBins);
 
     RooDataHist dh_Dp ("dh_Dp","",RooArgList(x),h_Dp);
@@ -696,7 +698,7 @@ void fit_SB_Binned()
     RooRealVar N_SB("N_SB","",N_SB_expected,0,1e7);
     N_SB.setConstant(true);
 
-    RooRealVar N_WS("N_WS","",0, 0, 1e7);
+    RooRealVar N_WS("N_WS","", 0, 0, 1e7);
 
     RooAddPdf model(
         "model","",
@@ -716,12 +718,13 @@ void fit_SB_Binned()
 
     model.plotOn(frame, LineColor(kBlack), LineWidth(3));
 
-    model.plotOn(frame, Components("pdf_WS"), LineColor(kGreen+2), LineWidth(2));
     model.plotOn(frame, Components("pdf_Dp"), LineColor(kRed), LineWidth(2));
     model.plotOn(frame, Components("pdf_Dst"), LineColor(kBlue), LineWidth(2));
     model.plotOn(frame, Components("pdf_Db"), LineColor(kMagenta), LineWidth(2));
     model.plotOn(frame, Components("pdf_Dn"), LineColor(kOrange+7), LineWidth(2));
     model.plotOn(frame, Components("pdf_SB"), LineColor(kYellow+2), LineWidth(2));
+    model.plotOn(frame, Components("pdf_WS"), LineColor(kGreen+2), LineWidth(2));
+
 
     frame->SetTitle("Binned fit of cand_Bz_OWNPV_CORRM with sideband background");
     frame->Draw();
@@ -733,12 +736,13 @@ void fit_SB_Binned()
 
     leg.AddEntry(frame->getObject(0), "Data", "pe");
     leg.AddEntry(frame->getObject(1), "Total fit", "l");
-    leg.AddEntry(frame->getObject(2), "WS sideband bkg - sweighted", "l");
-    leg.AddEntry(frame->getObject(3), "D+", "l");
-    leg.AddEntry(frame->getObject(4), "D*+", "l");
-    leg.AddEntry(frame->getObject(5), "D**+ combined", "l");
-    leg.AddEntry(frame->getObject(6), "D** broad", "l");
-    leg.AddEntry(frame->getObject(7), "RS sideband bkg", "l");
+    leg.AddEntry(frame->getObject(2), "D+", "l");
+    leg.AddEntry(frame->getObject(3), "D*+", "l");
+    leg.AddEntry(frame->getObject(4), "D** broad", "l");
+    leg.AddEntry(frame->getObject(5), "D** narrow", "l");
+    leg.AddEntry(frame->getObject(6), "RS sideband bkg", "l");
+    leg.AddEntry(frame->getObject(7), "WS sideband bkg", "l");
+
 
     leg.Draw();
 
@@ -768,8 +772,8 @@ void fit_SB_Unbinned()
     RooRealVar m("cand_Bz_Dp_M","m(D^{+}) [MeV]",1830.,1910.);
     x.setBins(100);
 
-    const double sigLo = 1844.;
-    const double sigHi = 1896.;
+    const double sigLo = 1840.;
+    const double sigHi = 1900.;
     const double SBscale_RS = (1900-1840) / ((1840-1826)+(1916-1900));
 
     RooDataSet data_sig(
@@ -831,29 +835,29 @@ void fit_SB_Unbinned()
     // Values manually copied from the MC fit => no propagation of error
     auto pdf_Dp = makeDCB("Dp", 5161.4,209.405,0.456019,115,1.10143,4.05265);
     auto pdf_Dpst  = makeDCB("Dpst", 4944.26,250.588,0.618174,114.995,1.42973,4.07023);
-    auto pdf_Dst31 = makeGauss("Dst31",4391.86,535.341);
-    auto pdf_Dst32 = makeGauss("Dst32",4393.21,535.965);
+    auto pdf_Dst_narrow = makeGauss("Dst_narrow",4446.08,574.064);
+    auto pdf_Dst_broad = makeGauss("Dst_broad",4407.21,517.073);
 
     RooConstVar n_bkg("n_bkg","",SBscale_RS*NSB_obs);
 
     RooRealVar n_ws("n_ws","",0.1*Nsig_obs,0.,0.5*Nsig_obs);
     RooRealVar n_Dp("n_Dp","",0.4*Nsig_obs,0.,Nsig_obs);
     RooRealVar n_Dpst("n_Dpst","",0.3*Nsig_obs,0.,Nsig_obs);
-    RooRealVar n_Dst31("n_Dst31","",0.05*Nsig_obs,0.,0.3*Nsig_obs);
-    RooRealVar n_Dst32("n_Dst32","",0.02*Nsig_obs,0.,0.2*Nsig_obs);
+    RooRealVar n_Dst_narrow("n_Dst_narrow","",0.05*Nsig_obs,0.,0.3*Nsig_obs);
+    RooRealVar n_Dst_broad("n_Dst_broad","",0.02*Nsig_obs,0.,0.2*Nsig_obs);
 
     RooAddPdf model(
         "model","",
         RooArgList(*pdf_Dp,
                    *pdf_Dpst,
-                   *pdf_Dst31,
-                   *pdf_Dst32,
+                   *pdf_Dst_narrow,
+                   *pdf_Dst_broad,
                    pdf_bkg,
                    pdf_ws),
         RooArgList(n_Dp,
                    n_Dpst,
-                   n_Dst31,
-                   n_Dst32,
+                   n_Dst_narrow,
+                   n_Dst_broad,
                    n_bkg,
                    n_ws)
     );
@@ -869,8 +873,8 @@ void fit_SB_Unbinned()
     model.plotOn(frame,Components(pdf_ws),LineColor(kCyan+2),LineStyle(kDashed));
     model.plotOn(frame,Components("pdf_Dp"),LineColor(kRed));
     model.plotOn(frame,Components("pdf_Dpst"),LineColor(kBlue));
-    model.plotOn(frame,Components("pdf_Dst31"),LineColor(kMagenta));
-    model.plotOn(frame,Components("pdf_Dst32"),LineColor(kOrange+7));
+    model.plotOn(frame,Components("pdf_Dst_narrow"),LineColor(kMagenta));
+    model.plotOn(frame,Components("pdf_Dst_broad"),LineColor(kOrange+7));
     frame->Draw();
 
     TLegend leg(0.60,0.60,0.88,0.88);
@@ -893,6 +897,7 @@ void fit_SB_Unbinned()
     std::cout << "Observed signal   = " << Nsig_obs << std::endl;
     std::cout << "Fitted WS yield   = " << n_ws.getVal()
               << " +- " << n_ws.getError() << std::endl;
+    fitres->correlationMatrix().Print();
 }
 
 
@@ -911,19 +916,19 @@ void fit_BB()
     const double mDp_sig_lo = 1840;
     const double mDp_sig_hi = 1900;
 
-    TFile fmc("templates_mcorr_50_unweighted.root","READ");
+    TFile *fmc = TFile::Open(MC_templates_50.c_str(), "READ");
 
-    TH1D* h_Dp  = (TH1D*)fmc.Get("h_Dp")->Clone("h_Dp_c");
-    TH1D* h_Dst = (TH1D*)fmc.Get("h_Dst")->Clone("h_Dst_c");
-    TH1D* h_Db  = (TH1D*)fmc.Get("h_Dstst_broad")->Clone("h_Db_c");
-    TH1D* h_Dn  = (TH1D*)fmc.Get("h_Dstst_narrow")->Clone("h_Dn_c");
+    TH1D* h_Dp  = (TH1D*)fmc->Get("h_Dp_w")->Clone("h_Dp_c");
+    TH1D* h_Dst = (TH1D*)fmc->Get("h_Dst_w")->Clone("h_Dst_c");
+    TH1D* h_Db  = (TH1D*)fmc->Get("h_Dstst_broad_w")->Clone("h_Db_c");
+    TH1D* h_Dn  = (TH1D*)fmc->Get("h_Dstst_narrow_w")->Clone("h_Dn_c");
 
     h_Dp->SetDirectory(nullptr);
     h_Dst->SetDirectory(nullptr);
     h_Db->SetDirectory(nullptr);
     h_Dn->SetDirectory(nullptr);
 
-    fmc.Close();
+    fmc->Close();
 
     ROOT::RDataFrame dfData("DecayTree",data_1.c_str());
 
@@ -1118,7 +1123,7 @@ void fit_BB()
 */
 
 
-void sweights_extraction_MC() // Simple Crystal Ball
+void sweights_extraction_MC()
 {
     ROOT::RDataFrame df_MC("DecayTree", MC.c_str());
     ROOT::RDF::TH1DModel h_mD("h_mD", ";m_{D+} [MeV];Entries", nBins, mDp_low, mDp_max);
@@ -1209,7 +1214,7 @@ void sweights_extraction_MC() // Simple Crystal Ball
     model0.plotOn(frame2, Range("fitWindow"), NormRange("fitWindow"), LineColor(kBlue), LineStyle(kDotted), Components(exp_bkg)); // background
     model0.plotOn(frame2, Range("fitWindow"), NormRange("fitWindow"), LineColor(kGreen+1), LineStyle(kDotted), Components(crystal_ball)); // signal
 
-    frame2->SetTitle("Fit of m_{D+} using MC template CB + exponential");
+    frame2->SetTitle("Fit of m_{D+} using MC template DCB + exponential");
     frame2->SetXTitle("m_{D+} [MeV]");
     frame2->SetYTitle("Entries");
     frame2->Draw();
@@ -1219,8 +1224,9 @@ void sweights_extraction_MC() // Simple Crystal Ball
     legend2.SetFillStyle(0);
     legend2.AddEntry(frame2->getObject(0), "Data", "pe"); 
     legend2.AddEntry(frame2->getObject(1), "Total fit", "l");
-    legend2.AddEntry(frame2->getObject(2), "MC Signal (CB)", "l");
-    legend2.AddEntry(frame2->getObject(3), "Background (exponential)", "l");
+    legend2.AddEntry(frame2->getObject(2), "Background (exponential)", "l");
+    legend2.AddEntry(frame2->getObject(3), "MC Signal (DCB)", "l");
+
 
     legend2.Draw();
 
@@ -1386,7 +1392,6 @@ void fit_sw_Binned()
     c.SaveAs("Fit_sw_Binned.png");
     fr->Print("v");
     fr->correlationMatrix().Print();
-
 }
 
 void plot_RS_sw() {
@@ -1449,3 +1454,212 @@ void plot_RS_sw() {
     std::cout << "Background sWeighted yield: " << h_bkg->Integral() << std::endl;
 }
 
+void extra_tracks() {
+    ROOT::RDataFrame df("DecayTree", data_1.c_str());
+
+    auto df_tracks = df
+        .Define("pass_mask",
+            "EXTRA_PARTS_PROBNN_PI > 0.3 && EXTRA_PARTS_PT > 1000 && EXTRA_PARTS_ETA > 2 && EXTRA_PARTS_ETA");
+
+    auto df_clean = df_tracks.Define("overlap_mask",
+        [](ROOT::RVec<float> ep_px, ROOT::RVec<float> ep_py, ROOT::RVec<float> ep_pz,
+           float d_K_px, float d_K_py, float d_K_pz,
+           float d_pi1_px, float d_pi1_py, float d_pi1_pz, 
+           float d_pi2_px, float d_pi2_py, float d_pi2_pz) {
+            
+            ROOT::RVec<int> is_clean(ep_px.size(), 1);
+            float tol = 1;
+            
+            for(size_t i = 0; i < ep_px.size(); ++i) {
+                if (std::abs(ep_px[i] - d_K_px) < tol && std::abs(ep_py[i] - d_K_py) < tol && std::abs(ep_pz[i] - d_K_pz) < tol) is_clean[i] = 0;
+                if (std::abs(ep_px[i] - d_pi1_px) < tol && std::abs(ep_py[i] - d_pi1_py) < tol && std::abs(ep_pz[i] - d_pi1_pz) < tol) is_clean[i] = 0;
+                if (std::abs(ep_px[i] - d_pi2_px) < tol && std::abs(ep_py[i] - d_pi2_py) < tol && std::abs(ep_pz[i] - d_pi2_pz) < tol) is_clean[i] = 0;
+            }
+            return is_clean;
+            
+        }, {"EXTRA_PARTS_PX", "EXTRA_PARTS_PY", "EXTRA_PARTS_PZ", 
+            "cand_Dp_Kp_PX", "cand_Dp_Kp_PY", "cand_Dp_Kp_PZ",
+            "cand_Dp_pim1_PX", "cand_Dp_pim1_PY", "cand_Dp_pim1_PZ", 
+            "cand_Dp_pim2_PX", "cand_Dp_pim2_PY", "cand_Dp_pim2_PZ"});
+
+    auto df_final_mask = df_clean.Define("final_mask", "pass_mask && overlap_mask");
+    auto df_pass = df_final_mask.Filter("Sum(final_mask) > 0", "No overlap + passing extra part");
+
+    auto df_filtered = df_pass
+        .Define("FILT_EP_PX", "EXTRA_PARTS_PX[pass_mask]")
+        .Define("FILT_EP_PY", "EXTRA_PARTS_PY[pass_mask]")
+        .Define("FILT_EP_PZ", "EXTRA_PARTS_PZ[pass_mask]");
+
+    float mass_pi = 139.57; 
+    float mass_D_PDG = 1869.66; 
+    
+    ROOT::RDF::TH1DModel model_m_DEP("h_m_DEP", "EXTRA_PARTS peak; m(Dpi) - m(D) + m(Dpdg) [MeV]; Events", 100, 2100, 2600);
+        
+    auto h_m_DEP = df_filtered
+        .Define("m_DEP", [mass_pi, mass_D_PDG](float Dpx, float Dpy, float Dpz, double D_M,
+                                   ROOT::RVec<float> EP_px, ROOT::RVec<float> EP_py, ROOT::RVec<float> EP_pz) {
+                
+                RVec<float> masses;
+                
+                PxPyPzMVector pD_m(Dpx, Dpy, Dpz, D_M);
+                PxPyPzEVector pD(pD_m);
+                
+                for (size_t i = 0; i < EP_px.size(); ++i) {
+                    PxPyPzMVector pEP_m(EP_px[i], EP_py[i], EP_pz[i], mass_pi);
+                    PxPyPzEVector pEP(pEP_m);
+                    
+                    PxPyPzEVector pDEP = pD + pEP;
+                    
+                    // m(Dpi) - m(D) + m(D_PDG)
+                    float improved_mass = pDEP.M() - pD.M() + mass_D_PDG;
+                    
+                    masses.push_back(improved_mass);    
+                }
+                return masses;
+
+        }, {"cand_Bz_Dp_PX", "cand_Bz_Dp_PY", "cand_Bz_Dp_PZ", "cand_Bz_Dp_M",
+            "FILT_EP_PX", "FILT_EP_PY", "FILT_EP_PZ"})
+        .Histo1D(model_m_DEP, "m_DEP");
+    
+    TCanvas* c1 = new TCanvas("c1", "D + Extra Track Mass", 800, 600);
+    
+    h_m_DEP->SetLineColor(kBlue+2);
+    h_m_DEP->SetLineWidth(2);
+    h_m_DEP->SetFillColorAlpha(kBlue, 0.1); 
+    
+    h_m_DEP->Draw("HIST");
+    c1->Update(); 
+    
+    double y_min = h_m_DEP->GetMinimum() > 0 ? h_m_DEP->GetMinimum() : 0.1;
+    double y_max = h_m_DEP->GetMinimum() * 2.2; 
+    
+    // Line for x = 2460
+    TLine *line_2460 = new TLine(2460, y_min, 2460, y_max);
+    line_2460->SetLineColor(kRed);
+    line_2460->SetLineStyle(2); 
+    line_2460->SetLineWidth(2);
+    line_2460->Draw(); 
+
+    // Line for x = 2280
+    TLine *line_2280 = new TLine(2280, y_min, 2280, y_max);
+    line_2280->SetLineColor(kGreen);
+    line_2280->SetLineStyle(2); 
+    line_2280->SetLineWidth(2);
+    line_2280->Draw(); 
+    
+    c1->SaveAs("m_DEP_plot_RS.png");
+}
+
+
+void variable_difference_scan() {
+    ROOT::EnableImplicitMT();
+
+    std::string tree_name = "DecayTree";
+    std::string sideband_cut = "cand_Bz_Dp_M < 1845 || cand_Bz_Dp_M > 1895";
+
+    TFile* f_rs = TFile::Open(data_1.c_str(), "READ");
+    TTree* tree_rs = (TTree*)f_rs->Get(tree_name.c_str());
+    
+    // Open WS file purely to validate branch existence
+    TFile* f_ws = TFile::Open(WS.c_str(), "READ");
+    TTree* tree_ws = (TTree*)f_ws->Get(tree_name.c_str());
+    
+    std::vector<std::string> variables;
+    struct VarLimits { double min; double max; };
+    std::map<std::string, VarLimits> limits;
+
+    std::cout << "Validating branches and extracting limits safely..." << std::endl;
+
+    TObjArray* branches = tree_rs->GetListOfBranches();
+    long n_scan_events = std::min(tree_rs->GetEntries(), 50000LL);
+    tree_rs->SetEstimate(n_scan_events);
+
+    for (int i = 0; i < branches->GetEntries(); ++i) {
+        TBranch* b_rs = (TBranch*)branches->At(i);
+        std::string varName = b_rs->GetName();
+        
+        if (varName.find("cand_") != 0) continue; // no extra parts and other variables
+        if (varName == "cand_Bz_Dp_M") continue;
+        if (!tree_ws->GetBranch(varName.c_str())) continue;
+        
+        // Scalar check
+        TLeaf* leaf = b_rs->GetLeaf(varName.c_str());
+        if (!leaf || leaf->GetLen() != 1) continue; 
+
+        tree_rs->Draw(varName.c_str(), "", "goff", n_scan_events);
+        long rows = tree_rs->GetSelectedRows();
+        
+        if (rows > 0) {
+            double* v1 = tree_rs->GetV1();
+            double vmin = TMath::MinElement(rows, v1);
+            double vmax = TMath::MaxElement(rows, v1);
+            
+            // Only add if we have valid limits
+            if (!std::isnan(vmin) && !std::isnan(vmax)) {
+                variables.push_back(varName);
+                limits[varName] = {vmin, vmax};
+            }
+        }
+    }
+    f_rs->Close();
+    f_ws->Close();
+
+    std::cout << "Filtered down to " << variables.size() << " safe scalar variables.\n" << std::endl;
+
+    ROOT::RDataFrame df_RS(tree_name, data_1);
+    ROOT::RDataFrame df_WS(tree_name, WS);
+
+    auto df0_RS = df_RS.Filter(sideband_cut);
+    auto df0_WS = df_WS.Filter(sideband_cut);
+
+    std::vector<ROOT::RDF::RResultPtr<::TH1D>> histos_RS;
+    std::vector<ROOT::RDF::RResultPtr<::TH1D>> histos_WS;
+
+    const int nx = 100;
+    for (const auto& var : variables) {
+        double vmin = limits[var].min;
+        double vmax = limits[var].max;
+        
+        if (vmin == vmax) { vmin -= 1; vmax += 1; }
+
+        histos_RS.push_back(df0_RS.Histo1D({("RS_"+var).c_str(), var.c_str(), nx, vmin, vmax}, var));
+        histos_WS.push_back(df0_WS.Histo1D({("WS_"+var).c_str(), var.c_str(), nx, vmin, vmax}, var));
+    }
+
+    std::cout << "Executing RDataFrame event loops...\n" << std::endl;
+
+    std::vector<std::pair<double, std::string>> diff_results;
+
+    // Bin content difference of RS-WS cand_ variables. Max difference = 1, Min difference = 0.
+    for (size_t i = 0; i < variables.size(); ++i) {
+        TH1D* hRS = histos_RS[i].GetPtr();
+        TH1D* hWS = histos_WS[i].GetPtr();
+        
+        if (hRS->GetEntries() == 0 || hWS->GetEntries() == 0) continue;
+
+        hRS->Scale(1.0 / hRS->Integral());
+        hWS->Scale(1.0 / hWS->Integral());
+
+        double current_diff = 0.0;
+        
+        for (int bin = 1; bin <= hRS->GetNbinsX(); ++bin) {
+            current_diff += std::abs(hRS->GetBinContent(bin) - hWS->GetBinContent(bin));
+        }
+
+        diff_results.push_back({current_diff, variables[i]});
+    }
+
+    std::sort(diff_results.rbegin(), diff_results.rend());
+
+    std::cout << "==========================================\n";
+    std::cout << "Top 10 Variables with Highest Shape Difference\n";
+    std::cout << "==========================================\n";
+    
+    int print_limit = std::min(static_cast<int>(diff_results.size()), 20);
+    
+    for (int i = 0; i < print_limit; ++i) {
+        std::cout << i + 1 << ". " << diff_results[i].second 
+                  << " (Score: " << diff_results[i].first/2 << ")\n";
+    }
+    std::cout << "==========================================\n";
+}
