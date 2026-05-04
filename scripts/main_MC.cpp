@@ -43,10 +43,10 @@ double OpeningAngle(const ROOT::Math::XYZVector& p1,
 --------------------------------------------
 */
 
-std::string MC_eff = "~/INFN/root_files/MC/MC_2_eff.root"; // MC with efficiencies without any cuts
-std::string MC = "~/INFN/root_files/MC/MC_2_eff_with_mCorr.root"; // MC with efficiencies and cuts
-std::string MC_templates_50 = "~/INFN/root_files/MC/templates_MC/templates_mcorr_50.root";
-std::string MC_templates_100 = "~/INFN/root_files/MC/templates_MC/templates_mcorr_100.root";
+std::string MC_eff = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/MC_2_eff_new.root"; // MC with efficiencies without any cuts
+std::string MC = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/MC_2_eff_with_mCorr.root"; // MC with efficiencies and cuts
+std::string MC_templates_50 = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/templates_MC/templates_mcorr_50.root";
+std::string MC_templates_100 = "/Volumes/Rome Drive/Latest_INFN/INFN/root_files/MC/templates_MC/templates_mcorr_100.root";
 
 
 /*
@@ -220,13 +220,14 @@ void Cuts_TreeAdd() {
 
                 if (m == 511) return 1; // B-> D
                 if (m == 413 && gm == 511) return 2; // B-> D*
-                
-                if (m == 413 && (gm == 10411 || gm == 20413) && gg == 511) return 31; // B0->D**->D*->D
-                if ((m == 10411 || m == 20413) && gm == 511) return 31; // D** NARROW
 
-                if (m == 413 && (gm == 10413 || gm == 415) && gg == 511) return 31;
-                if ((m == 10413 || m == 415)   && gm == 511) return 32; // D** BROAD
-                
+                // Narrow states
+                if (m == 413 && (gm == 20413 || gm == 415) && gg == 511) return 31;  // [B0 -> D*_1+ -> D*+ (pi0) -> D+] OR [B0 -> (D*_2+) -> (D*+) + (pi0) -> D+]
+                if (m == 415 && gm == 511) return 31; // [B0 -> (D*_2+) -> (D+) + (pi0) -> D+]
+
+                // Broad states
+                if (m == 413 && gm == 10413 && gg == 511) return 32; // [B0 -> D*_1+ (broad) -> D*+ (pi0) -> D+]
+                if (m == 10411 && gm == 511) return 32; // [B0 -> (D*_0+) -> (D+) + (pi0) -> D+]
 
                 return 0;
             },
@@ -241,13 +242,13 @@ void plot_CORRM() {
 
     // Unweighted
     auto h_Dp = df_same.Filter("SL_category == 1")
-        .Histo1D({"h_Dp", "m_{corr} of B^{0} (unweighted);m_{corr} [MeV/c^{2}];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
+        .Histo1D({"h_Dp", "Bz_OWNPV_CORRM (unweighted);m_{corr} [MeV];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
     auto h_Dst  = df_same.Filter("SL_category == 2")
-        .Histo1D({"h_Dst", "m_{corr} of B^{0} (unweighted);m_{corr} [MeV/c^{2}];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
+        .Histo1D({"h_Dst", "Bz_OWNPV_CORRM (unweighted);m_{corr} [MeV];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
     auto h_Dstst_narrow = df_same.Filter("SL_category == 31")
-        .Histo1D({"h_Dstst_narrow","m_{corr} of B^{0} (unweighted);m_{corr} [MeV/c^{2}];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
+        .Histo1D({"h_Dstst_narrow","Bz_OWNPV_CORRM (unweighted);m_{corr} [MeV];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
     auto h_Dstst_broad = df_same.Filter("SL_category == 32")
-        .Histo1D({"h_Dstst_broad","m_{corr} of B^{0} (unweighted);m_{corr} [MeV/c^{2}];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
+        .Histo1D({"h_Dstst_broad","Bz_OWNPV_CORRM (unweighted);m_{corr} [MeV];Events",50,2000,8000}, "Bz_OWNPV_CORRM");
 
     TCanvas *c1 = new TCanvas("c1", "Unweighted mCorr", 900, 700);
 
@@ -280,13 +281,13 @@ void plot_CORRM() {
 
     // Weighted
     auto h_Dp_w = df_same.Filter("SL_category == 1")
-        .Histo1D({"h_Dp_w","m_{corr} of B^{0} (weighted);m_{corr} [MeV];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
+        .Histo1D({"h_Dp_w","Bz_OWNPV_CORRM (weighted);m_{corr} [MeV];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
     auto h_Dst_w = df_same.Filter("SL_category == 2")
-        .Histo1D({"h_Dst_w","m_{corr} of B^{0} (weighted);m_{corr} [MeV/c^{2}];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
+        .Histo1D({"h_Dst_w","Bz_OWNPV_CORRM (weighted);m_{corr} [MeV];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
     auto h_Dstst_narrow_w = df_same.Filter("SL_category == 31")
-        .Histo1D({"h_Dstst_narrow_w","m_{corr} of B^{0} (weighted);m_{corr} [MeV/c^{2}];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
+        .Histo1D({"h_Dstst_narrow_w","Bz_OWNPV_CORRM (weighted);m_{corr} [MeV];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
     auto h_Dstst_broad_w = df_same.Filter("SL_category == 32")
-        .Histo1D({"h_Dstst_broad_w","m_{corr} of B^{0} (weighted);m_{corr} [MeV/c^{2}];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
+        .Histo1D({"h_Dstst_broad_w","Bz_OWNPV_CORRM (weighted);m_{corr} [MeV];Weighted Events",50,2000,8000}, "Bz_OWNPV_CORRM", "eff_Bz");
 
     TCanvas *c2 = new TCanvas("c2", "Weighted mCorr", 900, 700);
 
@@ -321,13 +322,13 @@ void plot_CORRM() {
     // Unweighted D**
     TCanvas *c3 = new TCanvas("c3", "D** only (unweighted)", 900, 700);
 
-    h_Dstst_broad->SetTitle("m_{corr} of B^{0} for D**p only (unweighted);m_{corr} [MeV];Events");
+    h_Dstst_broad->SetTitle("Bz_OWNPV_CORRM for D**p only (unweighted);m_{corr} [MeV];Events");
     h_Dstst_broad->GetYaxis()->SetRangeUser(0, 50);
     h_Dstst_broad->GetYaxis()->SetTitleOffset(1.3);
     h_Dstst_broad->GetXaxis()->SetTitleOffset(1.2);
 
     h_Dstst_broad->Draw("HIST");
-    //h_Dstst_narrow->Draw("HIST SAME");
+    h_Dstst_narrow->Draw("HIST SAME");
 
     auto leg3 = new TLegend(0.60, 0.75, 0.85, 0.90);
     leg3->SetBorderSize(0);
@@ -341,7 +342,7 @@ void plot_CORRM() {
     // Weighted D**
     TCanvas *c4 = new TCanvas("c4", "D** only (weighted)", 900, 700);
 
-    h_Dstst_broad_w->SetTitle("m_{corr} of B^{0} for D**p only (weighted);m_{corr} [MeV/c^{2}];Weighted Events");
+    h_Dstst_broad_w->SetTitle("Bz_OWNPV_CORRM for D**p only (weighted);m_{corr} [MeV];Weighted Events");
     h_Dstst_broad_w->GetYaxis()->SetRangeUser(0, 25);
     h_Dstst_broad_w->GetYaxis()->SetTitleOffset(1.3);
     h_Dstst_broad_w->GetXaxis()->SetTitleOffset(1.2);
@@ -359,11 +360,11 @@ void plot_CORRM() {
     c4->SaveAs("mCorr_weighted_DssOnly.png");
 
     // Saving template histograms to be used later if needed
-    TFile fout("templates_mcorr_50_unweighted.root", "RECREATE");
-    h_Dp->Write();
-    h_Dst->Write();
-    h_Dstst_broad->Write();
-    h_Dstst_narrow->Write();
+    TFile fout("templates_mcorr.root", "RECREATE");
+    h_Dp_w->Write();
+    h_Dst_w->Write();
+    h_Dstst_broad_w->Write();
+    h_Dstst_narrow_w->Write();
     fout.Close();
 }
 
@@ -377,14 +378,14 @@ void plot_pPerp() {
     auto d_Dst = df.Filter("SL_category == 2"); // B0 -> Dp*
     auto d_Dss = df.Filter("SL_category == 31 || SL_category == 32"); // B0 -> Dp**
 
-    const int nx = 36; const double xlo = 3.8, xhi = 5.9; // [GeV]
+    const int nx = 25; const double xlo = 3.8, xhi = 5.9; // [GeV]
     const int ny = 25; const double ylo = 0, yhi = 2.5;
 
-    auto h_D   = d_D.Histo2D({"h_D", "B^{0} -> D mu; m_{corr} [GeV/c^{2}]; p_{#perp}(D) [GeV/c]",
+    auto h_D   = d_D.Histo2D({"h_D", "B^{0} -> D mu; m_{corr} [GeV]; p_{#perp}(D) [GeV/c]",
                                 nx,xlo,xhi, ny,ylo,yhi}, "mCorr_GeV", "p_perp_D_GeV");
-    auto h_Dst = d_Dst.Histo2D({"h_Dst", "B^{0} -> D* mu; m_{corr} [GeV/c^{2}]; p_{#perp}(D) [GeV/c]",
+    auto h_Dst = d_Dst.Histo2D({"h_Dst", "B^{0} -> D* mu; m_{corr} [GeV]; p_{#perp}(D) [GeV/c]",
                                 nx,xlo,xhi, ny,ylo,yhi}, "mCorr_GeV", "p_perp_D_GeV");
-    auto h_Dss = d_Dss.Histo2D({"h_Dss", "B^{0} -> D** mu; m_{corr} [GeV/c^{2}]; p_{#perp}(D) [GeV/c]",
+    auto h_Dss = d_Dss.Histo2D({"h_Dss", "B^{0} -> D** mu; m_{corr} [GeV]; p_{#perp}(D) [GeV/c]",
                                 nx,xlo,xhi, ny,ylo,yhi}, "mCorr_GeV", "p_perp_D_GeV");
 
     auto normalize = [](TH2D* h){
@@ -775,10 +776,10 @@ void fit_Gauss() {
 
     // Same philosophy as the fit_DCB() here selecting for a combined D**; use whichever you like to study
     std::vector<std::pair<std::string, std::string>> comps = {
-        {"Dstst_COMBO", "SL_category == 31 || SL_category == 32"}
+        {"Dstst_broad", "SL_category == 32"}
     };
 
-    RooRealVar mCorr("mCorr", "Corrected mass", 2250, 8000);
+    RooRealVar mCorr("Bz_OWNPV_CORRM", "Corrected mass", 2250, 8000);
     RooRealVar eff_Bz("eff_Bz", "weight", 0, 1);
 
     for (auto &c : comps) {
@@ -982,4 +983,348 @@ void sweights_MC()
 
     c.SaveAs("Dp_M_fit_poly.png");
 
+}
+
+/*
+--------------------------------------------
+    Extra Tracks 
+--------------------------------------------
+*/
+
+void extra_tracks() {
+    ROOT::RDataFrame df("DecayTree", MC.c_str());
+
+    auto df_tracks = df
+        .Define("pass_mask",
+            "EXTRA_PARTS_PROBNN_PI > 0.3 && EXTRA_PARTS_PT > 1000 && EXTRA_PARTS_ETA > 2 && EXTRA_PARTS_ETA < 5"); // && (EXTRA_PARTS_CHARGE * Bz_Dp_CHARGE ==+1)"); // WS=+1, RS=-1
+
+    auto df_clean = df_tracks.Define("overlap_mask",
+        [](ROOT::RVec<float> ep_px, ROOT::RVec<float> ep_py, ROOT::RVec<float> ep_pz,
+           float d_K_px, float d_K_py, float d_K_pz,
+           float d_pi1_px, float d_pi1_py, float d_pi1_pz, 
+           float d_pi2_px, float d_pi2_py, float d_pi2_pz) {
+            
+            ROOT::RVec<int> is_clean(ep_px.size(), 1);
+            float tol = 0.0001;
+            
+            for(size_t i = 0; i < ep_px.size(); ++i) {
+                if (std::abs(ep_px[i] - d_K_px) < tol && std::abs(ep_py[i] - d_K_py) < tol && std::abs(ep_pz[i] - d_K_pz) < tol) is_clean[i] = 0;
+                if (std::abs(ep_px[i] - d_pi1_px) < tol && std::abs(ep_py[i] - d_pi1_py) < tol && std::abs(ep_pz[i] - d_pi1_pz) < tol) is_clean[i] = 0;
+                if (std::abs(ep_px[i] - d_pi2_px) < tol && std::abs(ep_py[i] - d_pi2_py) < tol && std::abs(ep_pz[i] - d_pi2_pz) < tol) is_clean[i] = 0;
+            }
+            return is_clean;
+            
+        }, {"EXTRA_PARTS_TRUEPX", "EXTRA_PARTS_TRUEPY", "EXTRA_PARTS_TRUEPZ", 
+            "Dp_Kp_TRUEPX", "Dp_Kp_TRUEPY", "Dp_Kp_TRUEPZ",
+            "Dp_pim1_TRUEPX", "Dp_pim1_TRUEPY", "Dp_pim1_TRUEPZ", 
+            "Dp_pim2_TRUEPX", "Dp_pim2_TRUEPY", "Dp_pim2_TRUEPZ"});
+
+    auto df_final_mask = df_clean.Define("final_mask", "pass_mask && overlap_mask");
+    auto df_pass = df_final_mask.Filter("Sum(final_mask) > 0", "No overlap + passing extra part");
+
+    auto df_filtered = df_pass
+        .Define("FILT_EP_PX", "EXTRA_PARTS_PX[final_mask]")
+        .Define("FILT_EP_PY", "EXTRA_PARTS_PY[final_mask]")
+        .Define("FILT_EP_PZ", "EXTRA_PARTS_PZ[final_mask]");
+
+    auto df_cat = df_filtered
+        .Define("category",
+            [](int B_id, int D_id, int mu_id,
+               int D_mother, int D_gdmother, int D_gdgdmother) {
+
+                int m  = std::abs(D_mother);
+                int gm = std::abs(D_gdmother);
+                int gg = std::abs(D_gdgdmother);
+                
+                // Category 1: D_2*(2460) as mother
+                if (m == 415) return 1;
+                
+                // Category 2: D_1 states (2420)
+                if (gm == 10413 || gm == 20413 || m == 10413 || m == 20413) return 2;                
+                
+                // Category 3: D_2*(2460) as grandmother
+                if (gm == 415) return 3;
+
+                // Category 4: Direct B -> D pi
+                if (m == 511) return 4;
+
+                // Category 5: Direct B -> D* pi
+                if (m == 413 && gm == 511) return 5;
+
+                return 0;
+            },
+            {"Bz_TRUEID", "Bz_Dp_TRUEID", "Bz_mup_TRUEID",
+             "Bz_Dp_MC_MOTHER_ID",
+             "Bz_Dp_MC_GD_MOTHER_ID",
+             "Bz_Dp_MC_GD_GD_MOTHER_ID"});
+
+    float mass_pi = 139.57;
+    float mass_D_PDG = 1869.66;
+
+    ROOT::RDF::TH1DModel model_m_DEP("h_m_DEP", "EXTRA_PARTS peak; m(Dpi) - m(D) + m(Dpdg) [MeV]; Events", 100, 2100, 2600);
+
+    auto df_mdep = df_cat
+        .Define("m_DEP", [mass_pi, mass_D_PDG](float Dpx, float Dpy, float Dpz, double D_M,
+                                   ROOT::RVec<float> EP_px, ROOT::RVec<float> EP_py, ROOT::RVec<float> EP_pz) {
+
+                RVec<float> masses;
+
+                PxPyPzMVector pD_m(Dpx, Dpy, Dpz, D_M);
+                PxPyPzEVector pD(pD_m);
+
+                for (size_t i = 0; i < EP_px.size(); ++i) {
+                    PxPyPzMVector pEP_m(EP_px[i], EP_py[i], EP_pz[i], mass_pi);
+                    PxPyPzEVector pEP(pEP_m);
+
+                    PxPyPzEVector pDEP = pD + pEP;
+
+                    float improved_mass = pDEP.M() - pD.M() + mass_D_PDG;
+                    masses.push_back(improved_mass);
+                }
+
+                std::sort(masses.begin(), masses.end());
+
+                std::vector<float> unique_masses;
+                for (float m : masses) {
+                    if (unique_masses.empty() || std::abs(m - unique_masses.back()) >= 0.0001) {
+                        unique_masses.push_back(m);
+                    }
+                }
+                return unique_masses;
+
+        }, {"Bz_Dp_PX", "Bz_Dp_PY", "Bz_Dp_PZ", "Bz_Dp_M",
+            "FILT_EP_PX", "FILT_EP_PY", "FILT_EP_PZ"});
+
+    auto h_cat0 = df_mdep.Filter("category == 0").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat1 = df_mdep.Filter("category == 1").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat2 = df_mdep.Filter("category == 2").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat3 = df_mdep.Filter("category == 3").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat4 = df_mdep.Filter("category == 4").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat5 = df_mdep.Filter("category == 5").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat6 = df_mdep.Histo1D(model_m_DEP, "m_DEP");
+
+    df_mdep.Filter("category == 0").Display({"m_DEP"}, 20)->Print(); // for debug of clones
+
+    TCanvas* c = new TCanvas("c_3x2", "Categories 3x2", 1500, 1000);
+    c->Divide(3, 2);
+
+    auto draw_pad = [](TH1D* h, int color, const char* labelText) {
+        h->SetLineColor(color);
+        h->SetLineWidth(2);
+        h->Draw("HIST");
+
+        double y_min = h->GetMinimum() > 0 ? h->GetMinimum() : 0.1;
+        double y_max = h->GetMaximum() * 1.2;
+
+        TLine *line_2460 = new TLine(2460, y_min, 2460, y_max);
+        line_2460->SetLineColor(kRed);
+        line_2460->SetLineStyle(2);
+        line_2460->Draw();
+
+        TLine *line_2280 = new TLine(2280, y_min, 2280, y_max);
+        line_2280->SetLineColor(kGreen+2);
+        line_2280->SetLineStyle(2);
+        line_2280->Draw();
+
+        TLatex latex;
+        latex.SetNDC();
+        latex.SetTextFont(42);
+        latex.SetTextSize(0.06);
+        latex.DrawLatex(0.15, 0.82, labelText); 
+    };
+
+    c->cd(1);
+    draw_pad(h_cat6.GetPtr(), kBlack, "Other ancestry");
+
+    c->cd(2);
+    draw_pad(h_cat1.GetPtr(), kRed, "D_{2}*+ (2460)");
+
+    c->cd(3);
+    draw_pad(h_cat2.GetPtr(), kBlue, "D_{1} (2420)");
+
+    c->cd(4);
+    draw_pad(h_cat3.GetPtr(), kGreen+2, "D_{2}*+ as gm");
+
+    c->cd(5);
+    draw_pad(h_cat4.GetPtr(), kYellow+2, "B0#rightarrowD+");
+
+    c->cd(6);
+    draw_pad(h_cat5.GetPtr(), kCyan-1, "B0#rightarrowD*#pi^{0}#rightarrowD+");
+
+    c->SaveAs("m_DEP_WS_FINAL.png");
+}
+
+
+void extra_tracks_bp() {
+    ROOT::RDataFrame df("DecayTree", "MC_Bp_new_eff.root");
+    
+    auto df_tracks = df
+        .Define("pass_mask",
+                "EXTRA_PARTS_PROBNN_PI > 0.3 && EXTRA_PARTS_PT > 1000 && EXTRA_PARTS_ETA > 2 && EXTRA_PARTS_ETA < 5 && (abs(EXTRA_PARTS_MC_MOTHER_ID) == 511 || abs(EXTRA_PARTS_MC_GD_MOTHER_ID) == 511 || abs(EXTRA_PARTS_MC_GD_GD_MOTHER_ID) == 511)"); // && (EXTRA_PARTS_CHARGE * Bz_Dp_CHARGE ==+1)"); // WS=+1, RS=-1
+    
+    auto df_clean = df_tracks.Define("overlap_mask",
+                                     [](ROOT::RVec<float> ep_px, ROOT::RVec<float> ep_py, ROOT::RVec<float> ep_pz,
+                                        float d_K_px, float d_K_py, float d_K_pz,
+                                        float d_pi1_px, float d_pi1_py, float d_pi1_pz,
+                                        float d_pi2_px, float d_pi2_py, float d_pi2_pz) {
+        
+        ROOT::RVec<int> is_clean(ep_px.size(), 1);
+        float tol = 0.0001;
+        
+        for(size_t i = 0; i < ep_px.size(); ++i) {
+            if (std::abs(ep_px[i] - d_K_px) < tol && std::abs(ep_py[i] - d_K_py) < tol && std::abs(ep_pz[i] - d_K_pz) < tol) is_clean[i] = 0;
+            if (std::abs(ep_px[i] - d_pi1_px) < tol && std::abs(ep_py[i] - d_pi1_py) < tol && std::abs(ep_pz[i] - d_pi1_pz) < tol) is_clean[i] = 0;
+            if (std::abs(ep_px[i] - d_pi2_px) < tol && std::abs(ep_py[i] - d_pi2_py) < tol && std::abs(ep_pz[i] - d_pi2_pz) < tol) is_clean[i] = 0;
+        }
+        return is_clean;
+        
+    }, {"EXTRA_PARTS_TRUEPX", "EXTRA_PARTS_TRUEPY", "EXTRA_PARTS_TRUEPZ",
+        "Dp_Kp_TRUEPX", "Dp_Kp_TRUEPY", "Dp_Kp_TRUEPZ",
+        "Dp_pim1_TRUEPX", "Dp_pim1_TRUEPY", "Dp_pim1_TRUEPZ",
+        "Dp_pim2_TRUEPX", "Dp_pim2_TRUEPY", "Dp_pim2_TRUEPZ"});
+    
+    auto df_final_mask = df_clean.Define("final_mask", "pass_mask && overlap_mask");
+    auto df_pass = df_final_mask.Filter("Sum(final_mask) > 0", "No overlap + passing extra part");
+    
+    auto df_filtered = df_pass
+        .Define("FILT_EP_PX", "EXTRA_PARTS_PX[final_mask]")
+        .Define("FILT_EP_PY", "EXTRA_PARTS_PY[final_mask]")
+        .Define("FILT_EP_PZ", "EXTRA_PARTS_PZ[final_mask]")
+        .Define("FILT_EP_MOTHER", "EXTRA_PARTS_MC_MOTHER_ID[final_mask]")
+        .Define("FILT_EP_GM", "EXTRA_PARTS_MC_GD_MOTHER_ID[final_mask]")
+        .Define("FILT_EP_GM_GM", "EXTRA_PARTS_MC_GD_GD_MOTHER_ID[final_mask]");
+
+    
+    auto df_cat = df_filtered.Define("category",
+        [](int D_m, int D_gm, int D_ggm,
+           ROOT::RVec<float> ep_m, ROOT::RVec<float> ep_gm, ROOT::RVec<float> ep_gmgm) {
+
+            int dm = std::abs(D_m);
+            int dgm = std::abs(D_gm);
+            int dggm = std::abs(D_ggm);
+
+            auto is_from_same_tree = [&](int m1, int m2, int m3) {
+                for (size_t i = 0; i < ep_m.size(); ++i) {
+                    int em = std::abs((int)ep_m[i]);
+                    int egm = std::abs((int)ep_gm[i]);
+                    int eggm = std::abs((int)ep_gmgm[i]);
+
+                    if (em == m1 || em == m2 || em == m3 ||
+                        egm == m1 || egm == m2 || egm == m3 ||
+                        eggm == m1 || eggm == m2 || eggm == m3) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            if (!is_from_same_tree(dm, dgm, dggm)) return 3; // combinatorial 
+
+            if (dm == 425 || dgm == 425) return 1; // D_2*0 family
+            if (dm == 10423 || dgm == 10423 || dm == 20423 || dgm == 20423) return 2; // D_1 family
+            
+            bool is_B_m = (dm == 511 || dm == 521);
+            bool is_B_gm = (dgm == 511 || dgm == 521 || dggm == 511 || dggm == 521);
+            if (is_B_m) return 4;
+            if (is_B_gm) return 5;
+
+            return 0;
+        },
+        {"Bz_Dp_MC_MOTHER_ID", "Bz_Dp_MC_GD_MOTHER_ID", "Bz_Dp_MC_GD_GD_MOTHER_ID",
+         "FILT_EP_MOTHER", "FILT_EP_GM", "FILT_EP_GM_GM"});
+
+    float mass_pi = 139.57;
+    float mass_D_PDG = 1869.66;
+    
+    ROOT::RDF::TH1DModel model_m_DEP("h_m_DEP", "EXTRA_PARTS peak; m(Dpi) - m(D) + m(Dpdg) [MeV]; Events", 100, 2100, 2600);
+    
+    auto df_mdep = df_cat
+        .Define("m_DEP", [mass_pi, mass_D_PDG](float Dpx, float Dpy, float Dpz, double D_M,
+                                               ROOT::RVec<float> EP_px, ROOT::RVec<float> EP_py, ROOT::RVec<float> EP_pz) {
+            
+            RVec<float> masses;
+            
+            PxPyPzMVector pD_m(Dpx, Dpy, Dpz, D_M);
+            PxPyPzEVector pD(pD_m);
+            
+            for (size_t i = 0; i < EP_px.size(); ++i) {
+                PxPyPzMVector pEP_m(EP_px[i], EP_py[i], EP_pz[i], mass_pi);
+                PxPyPzEVector pEP(pEP_m);
+                
+                PxPyPzEVector pDEP = pD + pEP;
+                
+                float improved_mass = pDEP.M() - pD.M() + mass_D_PDG;
+                masses.push_back(improved_mass);
+            }
+            
+            std::sort(masses.begin(), masses.end()); // check for unique masses within a vector of extra tracks. not sure if this should be kept.
+            
+            std::vector<float> unique_masses;
+            for (float m : masses) {
+                if (unique_masses.empty() || std::abs(m - unique_masses.back()) >= 0.0001) {
+                    unique_masses.push_back(m);
+                }
+            }
+            return unique_masses;
+            
+        }, {"Bz_Dp_PX", "Bz_Dp_PY", "Bz_Dp_PZ", "Bz_Dp_M",
+            "FILT_EP_PX", "FILT_EP_PY", "FILT_EP_PZ"});
+    
+    auto h_cat0 = df_mdep.Filter("category == 0").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat1 = df_mdep.Filter("category == 1").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat2 = df_mdep.Filter("category == 2").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat3 = df_mdep.Filter("category == 3").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat4 = df_mdep.Filter("category == 4").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat5 = df_mdep.Filter("category == 5").Histo1D(model_m_DEP, "m_DEP");
+    auto h_cat6 = df_mdep.Filter("category != -1").Histo1D(model_m_DEP, "m_DEP");
+    
+    df_mdep.Filter("category == 0").Display({"EXTRA_PARTS_MC_MOTHER_ID"}, 50)->Print(); // for debug of clones
+
+    TCanvas* c = new TCanvas("c_3x2", "Categories 3x2", 1500, 1000);
+    c->Divide(3, 2);
+
+    auto draw_pad = [](TH1D* h, int color, const char* labelText) {
+        h->SetLineColor(color);
+        h->SetLineWidth(2);
+        h->Draw("HIST");
+
+        double y_min = h->GetMinimum() > 0 ? h->GetMinimum() : 0.1;
+        double y_max = h->GetMaximum() * 1.2;
+
+        TLine *line_2460 = new TLine(2460, y_min, 2460, y_max);
+        line_2460->SetLineColor(kRed);
+        line_2460->SetLineStyle(2);
+        line_2460->Draw();
+
+        TLine *line_2280 = new TLine(2280, y_min, 2280, y_max);
+        line_2280->SetLineColor(kGreen+2);
+        line_2280->SetLineStyle(2);
+        line_2280->Draw();
+
+        TLatex latex;
+        latex.SetNDC();
+        latex.SetTextFont(42);
+        latex.SetTextSize(0.06);
+        latex.DrawLatex(0.15, 0.82, labelText); 
+    };
+
+    c->cd(1);
+    draw_pad(h_cat0.GetPtr(), kBlack, "Other with same ancestry of EP / Dp");
+
+    c->cd(2);
+    draw_pad(h_cat1.GetPtr(), kRed, "D_{2}*0 (2460) mother / gm");
+
+    c->cd(3);
+    draw_pad(h_cat2.GetPtr(), kBlue, "D_{1} (2420)");
+
+    c->cd(4);
+    draw_pad(h_cat3.GetPtr(), kGreen+2, "Other in which no same ancestry");
+
+    c->cd(5);
+    draw_pad(h_cat4.GetPtr(), kYellow+2, "B meson mother");
+
+    c->cd(6);
+    draw_pad(h_cat5.GetPtr(), kCyan-1, "B meson grandmother");
+
+    c->SaveAs("m_DEP_WS_FINAL.png");
 }
